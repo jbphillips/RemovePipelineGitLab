@@ -1,6 +1,8 @@
 # GitLab Pipeline Management Tool
 This application allows you to manage GitLab pipelines by retrieving and optionally deleting pipelines based on user-defined criteria.
 
+Added functionality to find all projects with a pipeline
+
 ### Prerequisites
 - .NET SDK
 - RestSharp library
