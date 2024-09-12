@@ -35,6 +35,7 @@ class Program
         Console.WriteLine("Select an option:");
         Console.WriteLine("1. Pipeline House Cleaner");
         Console.WriteLine("2. Who has a Pipeline");
+        Console.WriteLine("3. Show all pipelines");
         Console.Write("Enter your choice: ");
         string choice = Console.ReadLine();
 
@@ -45,6 +46,9 @@ class Program
                 break;
             case "2":
                 await WhoHasAPipeline(gitlabUrl, privateToken);
+                break;
+            case "3":
+                await ShowAllPipelines(config, gitlabUrl, privateToken, projectId);
                 break;
             default:
                 Console.WriteLine("Invalid choice. Exiting.");
@@ -139,6 +143,50 @@ class Program
                 Console.WriteLine($"Failed to delete pipeline {pipelineId}");
                 Console.WriteLine(ex.Message);
             }
+        }
+    }
+
+    static async Task ShowAllPipelines(IConfiguration config, string gitlabUrl, string privateToken, int projectId)
+    {
+        int perPage = 100; // Number of items per page
+        int page = 1; // Initial page number
+        var client = new RestClient(gitlabUrl); // RestClient for GitLab API
+        var allPipelines = new List<dynamic>(); // List to store all retrieved pipelines
+
+        // Loop to retrieve all pipelines using pagination
+        while (true)
+        {
+            var request = new RestRequest($"api/v4/projects/{projectId}/pipelines", Method.Get);
+            request.AddHeader("PRIVATE-TOKEN", privateToken);
+            request.AddParameter("per_page", perPage);
+            request.AddParameter("page", page);
+
+            var response = client.Execute(request);
+            if (response.IsSuccessful)
+            {
+                var pipelines = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(response.Content);
+                if (pipelines.Count == 0)
+                {
+                    break; // No more pipelines to retrieve
+                }
+                allPipelines.AddRange(pipelines);
+                page++;
+            }
+            else
+            {
+                Console.WriteLine("Failed to retrieve pipelines");
+                break;
+            }
+        }
+
+        // Display retrieved pipeline details
+        foreach (var pipeline in allPipelines)
+        {
+            Console.WriteLine($"Pipeline ID: {pipeline.id}");
+            Console.WriteLine($"Status: {pipeline.status}");
+            Console.WriteLine($"Ref: {pipeline["ref"]}");
+            Console.WriteLine($"Created At: {pipeline.created_at}");
+            Console.WriteLine();
         }
     }
 
